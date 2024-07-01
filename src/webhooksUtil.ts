@@ -5,7 +5,7 @@ import * as crypto from "crypto";
 import { IncomingMessage, ServerResponse } from "http";
 import { Web3 } from 'web3'
 import Decimal from 'decimal.js'
-import * as fs from 'fs';
+import { Client } from 'pg';
 
 export interface AlchemyRequest extends Request {
   alchemy: {
@@ -77,7 +77,7 @@ function addEdge(graph: Map<string, string[]>, A: string, B: string, ratio: Deci
   }
 }
 
-export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal) {
+export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client: Client) {
   if (swapEvents.length == 0) return;
   var graph = new Map<string, { symbol: string, ratio: Decimal }[]>()
 
@@ -116,19 +116,63 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal) {
     }
   }
 
-  // Writing to file
-  const jsonString = JSON.stringify(swapEvents, null, 2);
-  // Define the path and filename where you want to save the logs
-  const filePath = `logs_block${swapEvents[0].blockNumber}.json`;
+  // Writing to DB
+  for (const event of swapEvents) {
+    const {
+      blockNumber,
+      blockHash,
+      transactionHash,
+      token0: { id: token0_id, symbol: token0_symbol, amount: token0_amount, value_in_usd: token0_value_in_usd, total_exchanged_usd: token0_total_exchanged_usd },
+      token1: { id: token1_id, symbol: token1_symbol, amount: token1_amount, value_in_usd: token1_value_in_usd, total_exchanged_usd: token1_total_exchanged_usd },
+      timestamp
+    } = event;
 
-  // Write the JSON string to a file
-  fs.writeFile(filePath, jsonString, (err) => {
-    if (err) {
-      console.error('Error writing file', err);
-    } else {
-      console.log('File has been written successfully');
+    const query = `
+      INSERT INTO swap_events (
+        block_number,
+        block_hash,
+        transaction_hash,
+        token0_id,
+        token0_symbol,
+        token0_amount,
+        token0_value_in_usd,
+        token0_total_exchanged_usd,
+        token1_id,
+        token1_symbol,
+        token1_amount,
+        token1_value_in_usd,
+        token1_total_exchanged_usd,
+        eth_price_usd,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    `;
+
+    const values = [
+      blockNumber,
+      blockHash,
+      transactionHash,
+      token0_id,
+      token0_symbol,
+      token0_amount.toString(),
+      token0_value_in_usd.toString(),
+      token0_total_exchanged_usd.toString(),
+      token1_id,
+      token1_symbol,
+      token1_amount.toString(),
+      token1_value_in_usd.toString(),
+      token1_total_exchanged_usd.toString(),
+      ETH2USD.toString(),
+      timestamp
+    ];
+
+    try {
+      await client.query(query, values);
+      console.log('Event saved successfully');
+    } catch (err) {
+      console.error('Error saving event', err);
     }
-  })
+  }
+
 }
 
 // Function to get the token addresses

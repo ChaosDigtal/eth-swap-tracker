@@ -1,4 +1,5 @@
 import express from "express";
+import { Client } from 'pg';
 import dotenv from 'dotenv';
 import { ethers } from 'ethers';
 import { Web3 } from 'web3'
@@ -16,6 +17,22 @@ import {
 } from "./webhooksUtil";
 
 dotenv.config();
+
+const client = new Client({
+  host: '18.188.193.193',
+  database: 'postgres',
+  user: 'myuser',
+  password: 'Lapis@123',
+  port: 5432,
+});
+
+client.connect((err) => {
+  if (err) {
+    console.error('Connection error', err.stack);
+  } else {
+    console.log('Connected to the database');
+  }
+});
 
 const settings = {
   apiKey: process.env.ALCHEMY_API_KEY,
@@ -160,7 +177,7 @@ const main = async () => {
       }
     }
     console.log("started calculating USD at: " + getCurrentTimeISOString());
-    await fillUSDAmounts(_logs, ETH_LATEST_PRICE);
+    await fillUSDAmounts(_logs, ETH_LATEST_PRICE, client);
     console.log("ended parsing at: " + getCurrentTimeISOString());
     console.log(`finished in ${(((new Date()).getTime() - start_time.getTime()) / 1000.0)} seconds`);
     PARSING = false;
