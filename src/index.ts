@@ -52,6 +52,7 @@ const main = async () => {
   let timer: NodeJS.Timeout | null = null;
   var PARSING : Boolean = false;
   var ARRIVING : Boolean = false;
+  var block_timestamp : string;
 
   async function parseSwapEvents() {
     if(logs.length == 0) return;
@@ -180,14 +181,16 @@ const main = async () => {
     //   return;
     // }
     if (!ARRIVING) {
-      console.log("================");
-      console.log(`arrived block:${log.blockNumber} at: ` + getCurrentTimeISOString());
       ARRIVING = true;
+      console.log("================");
+      block_timestamp = getCurrentTimeISOString();
+      console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp);
     }
     if (timer) {
       clearTimeout(timer);
     }
     timer = setTimeout(parseSwapEvents, 300);
+    log.timestamp = block_timestamp;
     logs.push(log);
   })
   // Listen to Alchemy Notify webhook events
