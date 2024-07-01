@@ -15,7 +15,7 @@ npm install -g yarn
 Then, install the dependencies of all packages:
 
 ```
-yarn
+yarn(or npm install)
 ```
 
 ## Run
@@ -23,7 +23,7 @@ yarn
 To run on localhost:8080:
 
 ```
-yarn start
+yarn start(or npm start)
 ```
 
 Please change ALCHEMY_API_KEY
