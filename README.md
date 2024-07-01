@@ -26,9 +26,9 @@ To run on localhost:8080:
 yarn start
 ```
 
-Please change WEBHOOK_SIGNING_KEY to the signing key corresponding to your webhook, which you can find [here](https://docs.alchemy.com/alchemy/enhanced-apis/notify-api/using-notify#1.-find-your-signing-key)
-
 Please change ALCHEMY_API_KEY
+
+(If you are using webhook) Please change WEBHOOK_SIGNING_KEY to the signing key corresponding to your webhook, which you can find [here](https://docs.alchemy.com/alchemy/enhanced-apis/notify-api/using-notify#1.-find-your-signing-key)
 
 And just like that, you're done!
 

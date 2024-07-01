@@ -129,6 +129,7 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal) {
       console.log('File has been written successfully');
     }
   })
+  console.log("======================");
 }
 
 // Function to get the token addresses

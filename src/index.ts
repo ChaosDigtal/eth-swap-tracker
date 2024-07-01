@@ -60,7 +60,7 @@ const main = async () => {
     PARSING = true;
     ARRIVING = false;
     var start_time : Date = new Date();
-    console.log("started parsing: " + getCurrentTimeISOString());
+    console.log("started parsing at: " + getCurrentTimeISOString());
     // Fetch ETH price
     var ETH_LATEST_PRICE = await getEthereumUSD();
     console.log(ETH_LATEST_PRICE);
@@ -151,9 +151,9 @@ const main = async () => {
         }
       }
     }
-    console.log("started calculating USD: " + getCurrentTimeISOString());
+    console.log("started calculating USD at: " + getCurrentTimeISOString());
     await fillUSDAmounts(logs, ETH_LATEST_PRICE);
-    console.log("ended parsing: " + getCurrentTimeISOString());
+    console.log("ended parsing at: " + getCurrentTimeISOString());
     console.log(`finished in ${(((new Date()).getTime() - start_time.getTime()) / 1000.0)} seconds`);
     console.log("======================");
     PARSING = false;
@@ -173,15 +173,15 @@ const main = async () => {
       //console.log("Currently PARSING");
       return;
     }
-    console.log(`arrived block:${log.blockNumber} at: ` + getCurrentTimeISOString());
     if (!ARRIVING) {
       logs = [];
+      console.log(`arrived block:${log.blockNumber} at: ` + getCurrentTimeISOString());
       ARRIVING = true;
     }
     if (timer) {
       clearTimeout(timer);
     }
-    timer = setTimeout(parseSwapEvents, 500);
+    timer = setTimeout(parseSwapEvents, 300);
     logs.push(log);
   })
   // Listen to Alchemy Notify webhook events
