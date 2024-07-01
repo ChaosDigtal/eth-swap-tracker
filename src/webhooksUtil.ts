@@ -6,7 +6,6 @@ import { IncomingMessage, ServerResponse } from "http";
 import { Uint256 } from "web3";
 import { Web3 } from 'web3'
 import Decimal from 'decimal.js'
-import util from 'util'
 
 export interface AlchemyRequest extends Request {
   alchemy: {

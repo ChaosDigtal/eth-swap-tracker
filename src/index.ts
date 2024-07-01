@@ -37,7 +37,7 @@ const main = async () => {
   // Middleware needed to validate the alchemy signature
   app.use(
     express.json({
-      limit: '50mb',
+      limit: '100mb',
       verify: addAlchemyContextToRequest,
     })
   );
