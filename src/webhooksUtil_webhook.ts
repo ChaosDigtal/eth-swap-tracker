@@ -3,9 +3,9 @@ import { Request, Response } from "express-serve-static-core";
 import axios from 'axios';
 import * as crypto from "crypto";
 import { IncomingMessage, ServerResponse } from "http";
+import { Uint256 } from "web3";
 import { Web3 } from 'web3'
 import Decimal from 'decimal.js'
-import * as fs from 'fs';
 
 export interface AlchemyRequest extends Request {
   alchemy: {
@@ -64,12 +64,12 @@ export function validateAlchemySignature(signingKey: string) {
 }
 
 export const getEthereumUSD = async () => {
-  var response = (await axios.get("https://api.coincap.io/v2/assets/ethereum")).data;
-
+  var  response = (await axios.get("https://api.coincap.io/v2/assets/ethereum")).data;
+  
   return new Decimal(response['data']['priceUsd']);
 }
 
-function addEdge(graph: Map<string, string[]>, A: string, B: string, ratio: Decimal) {
+function addEdge(graph : Map<string, string[]>, A : string, B : string, ratio : Decimal) {
   if (graph.has(A)) {
     graph.get(A)!.push({ symbol: B, ratio: ratio });
   } else {
@@ -77,24 +77,24 @@ function addEdge(graph: Map<string, string[]>, A: string, B: string, ratio: Deci
   }
 }
 
-export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal) {
+export function fillUSDAmounts(swapEvents : SwapEvent[], ETH2USD : Decimal) {
   if (swapEvents.length == 0) return;
   var graph = new Map<string, { symbol: string, ratio: Decimal }[]>()
-
+  
   for (var se of swapEvents) {
     addEdge(graph, se.token0.symbol, se.token1.symbol, se.token0.amount.dividedBy(se.token1.amount));
     addEdge(graph, se.token1.symbol, se.token0.symbol, se.token1.amount.dividedBy(se.token0.amount));
   }
 
-  const stack: string[] = ["USDC", "USDT", "WETH"];
-
+  const stack : string[] = ["USDC", "USDT", "WETH"];
+  
   var symbol2USD = new Map<string, Decimal>();
-
+  
   symbol2USD.set("WETH", ETH2USD);
   symbol2USD.set("USDT", new Decimal(1.0));
   symbol2USD.set("USDC", new Decimal(1.0));
 
-  while (stack.length > 0) {
+  while(stack.length > 0) {
     const symbol = stack.pop();
 
     if (!graph.has(symbol)) continue;
@@ -105,34 +105,17 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal) {
       }
     }
   }
-  for (var i = 0; i < swapEvents.length; ++i) {
-    if (symbol2USD.has(swapEvents[i].token0.symbol)) {
-      swapEvents[i].token0.value_in_usd = symbol2USD.get(swapEvents[i].token0.symbol);
-      swapEvents[i].token0.total_exchanged_usd = swapEvents[i].token0.value_in_usd.times(swapEvents[i].token0.amount);
-    }
-    if (symbol2USD.has(swapEvents[i].token1.symbol)) {
-      swapEvents[i].token1.value_in_usd = symbol2USD.get(swapEvents[i].token1.symbol);
-      swapEvents[i].token1.total_exchanged_usd = swapEvents[i].token1.value_in_usd.times(swapEvents[i].token1.amount);
-    }
+
+  for (var i = 0; i < swapEvents.length; ++ i) {
+    swapEvents[i].token0.value_in_usd = symbol2USD.get(swapEvents[i].token0.symbol);
+    swapEvents[i].token0.total_exchanged_usd = swapEvents[i].token0.value_in_usd.times(swapEvents[i].token0.amount);
+    swapEvents[i].token1.value_in_usd = symbol2USD.get(swapEvents[i].token1.symbol);
+    swapEvents[i].token1.total_exchanged_usd = swapEvents[i].token1.value_in_usd.times(swapEvents[i].token1.amount);
   }
-
-  // Writing to file
-  const jsonString = JSON.stringify(swapEvents, null, 2);
-  // Define the path and filename where you want to save the logs
-  const filePath = `logs_block${swapEvents[0].blockNumber}.json`;
-
-  // Write the JSON string to a file
-  fs.writeFile(filePath, jsonString, (err) => {
-    if (err) {
-      console.error('Error writing file', err);
-    } else {
-      console.log('File has been written successfully');
-    }
-  })
 }
 
 // Function to get the token addresses
-export async function getPairTokenSymbols(web3: Web3, pairAddress: string) {
+export async function getPairTokenSymbols(web3 : Web3, pairAddress: string) {
   const pairABI = [
     {
       "constant": true,
