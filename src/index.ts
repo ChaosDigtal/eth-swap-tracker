@@ -63,7 +63,7 @@ const main = async () => {
     console.log("started parsing at: " + getCurrentTimeISOString());
     // Fetch ETH price
     var ETH_LATEST_PRICE = await getEthereumUSD();
-    console.log(ETH_LATEST_PRICE);
+    console.log(`Current ETH Price ${ETH_LATEST_PRICE}`);
     // Example: Extract token swap details
 
     for (var i = 0; i < logs.length; ++i) {
@@ -155,7 +155,6 @@ const main = async () => {
     await fillUSDAmounts(logs, ETH_LATEST_PRICE);
     console.log("ended parsing at: " + getCurrentTimeISOString());
     console.log(`finished in ${(((new Date()).getTime() - start_time.getTime()) / 1000.0)} seconds`);
-    console.log("======================");
     PARSING = false;
   }
 
@@ -175,6 +174,7 @@ const main = async () => {
     }
     if (!ARRIVING) {
       logs = [];
+      console.log("================");
       console.log(`arrived block:${log.blockNumber} at: ` + getCurrentTimeISOString());
       ARRIVING = true;
     }
