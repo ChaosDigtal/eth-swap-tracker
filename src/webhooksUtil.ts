@@ -185,28 +185,13 @@ export interface AlchemyWebhookEvent {
   event: Record<any, any>;
 }
 
-export interface SwapEvent {
-  //pool_version: string;
-  token0: {
-    symbol: string;
-    amount: Decimal;
-    value_in_usd: Decimal;
-    total_exchanged_usd: Decimal;
-  };
-  token1: {
-    symbol: string;
-    amount: Decimal;
-    value_in_usd: Decimal;
-    total_exchanged_usd: Decimal;
-  };
-}
-
 export function getCurrentTimeISOString(): string {
   const now = new Date();
   return now.toISOString();
 }
 
 export interface Token {
+  id: string;
   symbol: string;
   decimal: number;
 }

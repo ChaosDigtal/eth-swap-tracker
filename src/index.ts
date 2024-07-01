@@ -11,12 +11,9 @@ import {
   getPairTokenSymbols,
   getCurrentTimeISOString,
   fillUSDAmounts,
-  AlchemyWebhookEvent,
-  SwapEvent,
   Token,
   PairToken,
 } from "./webhooksUtil";
-import { start } from "repl";
 
 dotenv.config();
 
@@ -113,6 +110,7 @@ const main = async () => {
         } else {
           var response = await alchemy.core.getTokenMetadata(symbols.token0);
           var token: Token = {
+            id: symbols?.token0,
             symbol: response.symbol,
             decimal: response.decimals,
           }
@@ -125,6 +123,7 @@ const main = async () => {
         } else {
           var response = await alchemy.core.getTokenMetadata(symbols.token1);
           var token: Token = {
+            id: symbols?.token1,
             symbol: response.symbol,
             decimal: response.decimals,
           }
@@ -135,22 +134,25 @@ const main = async () => {
       }
       var amount0Decimal = new Decimal(ethers.formatUnits(amount0, pairToken?.token0.decimal));
       var amount1Decimal = new Decimal(ethers.formatUnits(amount1, pairToken?.token1.decimal));
-      var se: SwapEvent;
       if (amount0Decimal.isPositive()) {
         _logs[i].token0 = {
+            id: pairToken.token0.id,
             symbol: pairToken?.token0.symbol,
             amount: amount0Decimal,
         };
         _logs[i].token1 = {
+            id: pairToken.token1.id,
             symbol: pairToken?.token1.symbol,
             amount: amount1Decimal.abs(),
         };
       } else {
         _logs[i].token0 = {
+            id: pairToken.token1.id,
             symbol: pairToken?.token1.symbol,
             amount: amount1Decimal,
         };
         _logs[i].token1 = {
+            id: pairToken.token0.id,
             symbol: pairToken?.token0.symbol,
             amount: amount0Decimal.abs(),
         }
