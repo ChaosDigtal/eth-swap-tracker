@@ -129,8 +129,8 @@ const main = async () => {
           var response = await alchemy.core.getTokenMetadata(symbols.token0);
           var token: Token = {
             id: symbols?.token0,
-            symbol: response.symbol,
-            decimal: response.decimals,
+            symbol: response?.symbol,
+            decimal: response?.decimals,
           }
           pairToken.token0 = token;
           tokens.set(symbols.token0, token);
@@ -142,36 +142,36 @@ const main = async () => {
           var response = await alchemy.core.getTokenMetadata(symbols.token1);
           var token: Token = {
             id: symbols?.token1,
-            symbol: response.symbol,
-            decimal: response.decimals,
+            symbol: response?.symbol,
+            decimal: response?.decimals,
           }
           pairToken.token1 = token;
           tokens.set(symbols.token1, token);
         }
         pairTokens.set(_logs[i].address, pairToken);
       }
-      var amount0Decimal = new Decimal(ethers.formatUnits(amount0, pairToken?.token0.decimal));
-      var amount1Decimal = new Decimal(ethers.formatUnits(amount1, pairToken?.token1.decimal));
+      var amount0Decimal = new Decimal(ethers.formatUnits(amount0, pairToken?.token0?.decimal));
+      var amount1Decimal = new Decimal(ethers.formatUnits(amount1, pairToken?.token1?.decimal));
       if (amount0Decimal.isPositive()) {
         _logs[i].token0 = {
-            id: pairToken.token0.id,
-            symbol: pairToken?.token0.symbol,
+            id: pairToken?.token0?.id,
+            symbol: pairToken?.token0?.symbol,
             amount: amount0Decimal,
         };
         _logs[i].token1 = {
-            id: pairToken.token1.id,
-            symbol: pairToken?.token1.symbol,
+            id: pairToken?.token1?.id,
+            symbol: pairToken?.token1?.symbol,
             amount: amount1Decimal.abs(),
         };
       } else {
         _logs[i].token0 = {
-            id: pairToken.token1.id,
-            symbol: pairToken?.token1.symbol,
+            id: pairToken?.token1?.id,
+            symbol: pairToken?.token1?.symbol,
             amount: amount1Decimal,
         };
         _logs[i].token1 = {
-            id: pairToken.token0.id,
-            symbol: pairToken?.token0.symbol,
+            id: pairToken?.token0?.id,
+            symbol: pairToken?.token0?.symbol,
             amount: amount0Decimal.abs(),
         }
       }

@@ -167,7 +167,6 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
 
     try {
       await client.query(query, values);
-      console.log('Event saved successfully');
     } catch (err) {
       console.error('Error saving event', err);
     }
