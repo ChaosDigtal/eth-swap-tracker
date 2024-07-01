@@ -57,31 +57,36 @@ const main = async () => {
   var ARRIVING : Boolean = false;
 
   async function parseSwapEvents() {
+    if(logs.length == 0) return;
     PARSING = true;
     ARRIVING = false;
+    const currentBlockNumber = logs[0].blockNumber;
+    var _logs = logs.filter(log => log.blockNumber == currentBlockNumber);
+    logs = logs.filter(log => log.blockNumber != currentBlockNumber);
     var start_time : Date = new Date();
-    console.log("started parsing at: " + getCurrentTimeISOString());
+    console.log(`started parsing block:${currentBlockNumber} at: ` + getCurrentTimeISOString());
+
     // Fetch ETH price
     var ETH_LATEST_PRICE = await getEthereumUSD();
     console.log(`Current ETH Price ${ETH_LATEST_PRICE}`);
     // Example: Extract token swap details
 
-    for (var i = 0; i < logs.length; ++i) {
+    for (var i = 0; i < _logs.length; ++i) {
       var amount0, amount1;
-      if (logs[i].topics[0] == UNISWAP_V3_SWAP_EVENT) {
+      if (_logs[i].topics[0] == UNISWAP_V3_SWAP_EVENT) {
         const iface = new ethers.Interface([
           'event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)'
         ]);
 
-        const parsedLog = iface.parseLog(logs[i]);
+        const parsedLog = iface.parseLog(_logs[i]);
         amount0 = parsedLog?.args.amount0;
         amount1 = parsedLog?.args.amount1;
-      } else if (logs[i].topics[0] == UNISWAP_V2_SWAP_EVENT) {
+      } else if (_logs[i].topics[0] == UNISWAP_V2_SWAP_EVENT) {
         const iface = new ethers.Interface([
           'event Swap(address indexed sender, uint amount0In, uint amount1In, uint amount0Out, uint amount1Out, address indexed to)'
         ]);
 
-        const parsedLog = iface.parseLog(logs[i]);
+        const parsedLog = iface.parseLog(_logs[i]);
         const amount0In = parsedLog?.args.amount0In;
         const amount0Out = parsedLog?.args.amount0Out;
         const amount1In = parsedLog?.args.amount1In;
@@ -96,11 +101,11 @@ const main = async () => {
       }
 
       var pairToken: PairToken = {}
-      if (pairTokens.has(logs[i].address)) {
-        pairToken = pairTokens.get(logs[i].address);
+      if (pairTokens.has(_logs[i].address)) {
+        pairToken = pairTokens.get(_logs[i].address);
       } else {
-        const symbols = await getPairTokenSymbols(web3, logs[i].address);
-        // const response = await alchemy.core.getTokenMetadata(logs[i].address);
+        const symbols = await getPairTokenSymbols(web3, _logs[i].address);
+        // const response = await alchemy.core.getTokenMetadata(_logs[i].address);
         // pairToken.pool_version = response.name;
         if (tokens.has(symbols.token0)) {
           var token = tokens.get(symbols.token0);
@@ -126,33 +131,33 @@ const main = async () => {
           pairToken.token1 = token;
           tokens.set(symbols.token1, token);
         }
-        pairTokens.set(logs[i].address, pairToken);
+        pairTokens.set(_logs[i].address, pairToken);
       }
       var amount0Decimal = new Decimal(ethers.formatUnits(amount0, pairToken?.token0.decimal));
       var amount1Decimal = new Decimal(ethers.formatUnits(amount1, pairToken?.token1.decimal));
       var se: SwapEvent;
       if (amount0Decimal.isPositive()) {
-        logs[i].token0 = {
+        _logs[i].token0 = {
             symbol: pairToken?.token0.symbol,
             amount: amount0Decimal,
         };
-        logs[i].token1 = {
+        _logs[i].token1 = {
             symbol: pairToken?.token1.symbol,
             amount: amount1Decimal.abs(),
         };
       } else {
-        logs[i].token0 = {
+        _logs[i].token0 = {
             symbol: pairToken?.token1.symbol,
             amount: amount1Decimal,
         };
-        logs[i].token1 = {
+        _logs[i].token1 = {
             symbol: pairToken?.token0.symbol,
             amount: amount0Decimal.abs(),
         }
       }
     }
     console.log("started calculating USD at: " + getCurrentTimeISOString());
-    await fillUSDAmounts(logs, ETH_LATEST_PRICE);
+    await fillUSDAmounts(_logs, ETH_LATEST_PRICE);
     console.log("ended parsing at: " + getCurrentTimeISOString());
     console.log(`finished in ${(((new Date()).getTime() - start_time.getTime()) / 1000.0)} seconds`);
     PARSING = false;
@@ -168,12 +173,11 @@ const main = async () => {
   }
 
   alchemy.ws.on(filter, (log) => {
-    if (PARSING) {
-      //console.log("Currently PARSING");
-      return;
-    }
+    // if (PARSING) {
+    //   //console.log("Currently PARSING");
+    //   return;
+    // }
     if (!ARRIVING) {
-      logs = [];
       console.log("================");
       console.log(`arrived block:${log.blockNumber} at: ` + getCurrentTimeISOString());
       ARRIVING = true;
