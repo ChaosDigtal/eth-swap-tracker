@@ -192,7 +192,7 @@ const main = async () => {
     ]
   }
 
-  alchemy.ws.on(filter, (log) => {
+  alchemy.ws.on(filter, async (log) => {
     // if (PARSING) {
     //   //console.log("Currently PARSING");
     //   return;
@@ -200,14 +200,14 @@ const main = async () => {
     if (!ARRIVING) {
       ARRIVING = true;
       console.log("================");
-      block_timestamp = getCurrentTimeISOString();
-      console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp);
+      block_timestamp = await web3.eth.getBlock(1920050).timestamp;
+      console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp.toString());
     }
     if (timer) {
       clearTimeout(timer);
     }
     timer = setTimeout(parseSwapEvents, 300);
-    log.timestamp = block_timestamp;
+    log.timestamp = block_timestamp.toString();
     logs.push(log);
   })
   // Listen to Alchemy Notify webhook events

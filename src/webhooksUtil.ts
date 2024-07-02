@@ -153,15 +153,15 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
       transactionHash,
       token0_id,
       token0_symbol,
-      token0_amount.toString(),
-      token0_value_in_usd.toString(),
-      token0_total_exchanged_usd.toString(),
+      token0_amount?.toString(),
+      token0_value_in_usd?.toString(),
+      token0_total_exchanged_usd?.toString(),
       token1_id,
       token1_symbol,
-      token1_amount.toString(),
-      token1_value_in_usd.toString(),
-      token1_total_exchanged_usd.toString(),
-      ETH2USD.toString(),
+      token1_amount?.toString(),
+      token1_value_in_usd?.toString(),
+      token1_total_exchanged_usd?.toString(),
+      ETH2USD?.toString(),
       timestamp
     ];
 
