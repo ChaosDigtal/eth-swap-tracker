@@ -200,14 +200,14 @@ const main = async () => {
     if (!ARRIVING) {
       ARRIVING = true;
       console.log("================");
-      block_timestamp = await web3.eth.getBlock(log.blockNumber).timestamp;
-      console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp.toString());
+      block_timestamp = (new Date(parseInt((await web3.eth.getBlock(log.blockNumber)).timestamp) * 1000)).toISOString()
+      console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp);
     }
     if (timer) {
       clearTimeout(timer);
     }
     timer = setTimeout(parseSwapEvents, 300);
-    log.timestamp = block_timestamp.toString();
+    log.timestamp = block_timestamp;
     logs.push(log);
   })
   // Listen to Alchemy Notify webhook events
