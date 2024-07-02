@@ -200,7 +200,7 @@ const main = async () => {
     if (!ARRIVING) {
       ARRIVING = true;
       console.log("================");
-      block_timestamp = await web3.eth.getBlock(1920050).timestamp;
+      block_timestamp = await web3.eth.getBlock(log.blockNumber).timestamp;
       console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp.toString());
     }
     if (timer) {
