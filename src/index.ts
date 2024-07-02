@@ -15,6 +15,7 @@ import {
   Token,
   PairToken,
 } from "./webhooksUtil";
+import { get } from "http";
 
 dotenv.config();
 
@@ -177,7 +178,7 @@ const main = async () => {
       }
     }
     console.log("started calculating USD at: " + getCurrentTimeISOString());
-    await fillUSDAmounts(_logs, ETH_LATEST_PRICE, client);
+    await fillUSDAmounts(_logs, ETH_LATEST_PRICE, client, web3);
     console.log("ended parsing at: " + getCurrentTimeISOString());
     console.log(`finished in ${(((new Date()).getTime() - start_time.getTime()) / 1000.0)} seconds`);
     PARSING = false;
@@ -200,14 +201,13 @@ const main = async () => {
     if (!ARRIVING) {
       ARRIVING = true;
       console.log("================");
-      block_timestamp = (new Date(parseInt((await web3.eth.getBlock(log.blockNumber)).timestamp) * 1000)).toISOString()
+      block_timestamp = getCurrentTimeISOString();
       console.log(`arrived block:${log.blockNumber} at: ` + block_timestamp);
     }
     if (timer) {
       clearTimeout(timer);
     }
     timer = setTimeout(parseSwapEvents, 300);
-    log.timestamp = block_timestamp;
     logs.push(log);
   })
   // Listen to Alchemy Notify webhook events

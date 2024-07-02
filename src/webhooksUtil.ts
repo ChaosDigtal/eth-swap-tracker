@@ -77,7 +77,7 @@ function addEdge(graph: Map<string, string[]>, A: string, B: string, ratio: Deci
   }
 }
 
-export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client: Client) {
+export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client: Client, web3 : Web3) {
   if (swapEvents.length == 0) return;
   var graph = new Map<string, { symbol: string, ratio: Decimal }[]>()
 
@@ -116,6 +116,9 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
     }
   }
 
+  
+  const block_timestamp = (new Date(parseInt((await web3.eth.getBlock(swapEvents[0].blockNumber)).timestamp) * 1000)).toISOString();
+
   // Writing to DB
   for (const event of swapEvents) {
     const {
@@ -124,7 +127,6 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
       transactionHash,
       token0: { id: token0_id, symbol: token0_symbol, amount: token0_amount, value_in_usd: token0_value_in_usd, total_exchanged_usd: token0_total_exchanged_usd },
       token1: { id: token1_id, symbol: token1_symbol, amount: token1_amount, value_in_usd: token1_value_in_usd, total_exchanged_usd: token1_total_exchanged_usd },
-      timestamp
     } = event;
 
     const query = `
@@ -162,7 +164,7 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
       (token1_value_in_usd ?? 0).toString(),
       (token1_total_exchanged_usd ?? 0).toString(),
       (ETH2USD ?? 0).toString(),
-      timestamp
+      block_timestamp
     ];
 
     try {
