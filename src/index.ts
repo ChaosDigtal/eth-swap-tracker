@@ -68,24 +68,27 @@ const main = async () => {
   var tokens = new Map<string, Token>();
 
   let timer: NodeJS.Timeout | null = null;
-  var PARSING : Boolean = false;
-  var ARRIVING : Boolean = false;
-  var block_timestamp : string;
+  var PARSING: Boolean = false;
+  var ARRIVING: Boolean = false;
+  var block_timestamp: string;
 
   async function parseSwapEvents() {
-    if(logs.length == 0) return;
+    if (logs.length == 0) return;
     PARSING = true;
     ARRIVING = false;
     const currentBlockNumber = logs[0].blockNumber;
     var _logs = logs.filter(log => log.blockNumber == currentBlockNumber);
     logs = logs.filter(log => log.blockNumber != currentBlockNumber);
-    var start_time : Date = new Date();
+    var start_time: Date = new Date();
     console.log(`started parsing block:${currentBlockNumber} at: ` + getCurrentTimeISOString());
 
     // Fetch ETH price
     var ETH_LATEST_PRICE = await getEthereumUSD();
     console.log(`Current ETH Price ${ETH_LATEST_PRICE}`);
     // Example: Extract token swap details
+
+    var currentTransactionhash: string = '';
+    var currentFromAddress: string = '';
 
     for (var i = 0; i < _logs.length; ++i) {
       var amount0, amount1;
@@ -155,27 +158,33 @@ const main = async () => {
       var amount1Decimal = new Decimal(ethers.formatUnits(amount1, pairToken?.token1?.decimal));
       if (amount0Decimal.isPositive()) {
         _logs[i].token0 = {
-            id: pairToken?.token0?.id,
-            symbol: pairToken?.token0?.symbol,
-            amount: amount0Decimal,
+          id: pairToken?.token0?.id,
+          symbol: pairToken?.token0?.symbol,
+          amount: amount0Decimal,
         };
         _logs[i].token1 = {
-            id: pairToken?.token1?.id,
-            symbol: pairToken?.token1?.symbol,
-            amount: amount1Decimal.abs(),
+          id: pairToken?.token1?.id,
+          symbol: pairToken?.token1?.symbol,
+          amount: amount1Decimal.abs(),
         };
       } else {
         _logs[i].token0 = {
-            id: pairToken?.token1?.id,
-            symbol: pairToken?.token1?.symbol,
-            amount: amount1Decimal,
+          id: pairToken?.token1?.id,
+          symbol: pairToken?.token1?.symbol,
+          amount: amount1Decimal,
         };
         _logs[i].token1 = {
-            id: pairToken?.token0?.id,
-            symbol: pairToken?.token0?.symbol,
-            amount: amount0Decimal.abs(),
+          id: pairToken?.token0?.id,
+          symbol: pairToken?.token0?.symbol,
+          amount: amount0Decimal.abs(),
         }
       }
+      if (_logs[i].transactionHash != currentTransactionhash) {
+        currentTransactionhash = _logs[i].transactionHash;
+        const transaction = await web3.eth.getTransaction(currentTransactionhash);
+        currentFromAddress = transaction.from;
+      }
+      _logs[i].fromAddress = currentFromAddress;
     }
     console.log("started calculating USD at: " + getCurrentTimeISOString());
     await fillUSDAmounts(_logs, ETH_LATEST_PRICE, client, web3);
