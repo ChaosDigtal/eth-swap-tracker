@@ -150,9 +150,9 @@ const main = async () => {
         } else {
           var response;
           try {
-            response = await alchemy.core.getTokenMetadata(symbols.token0);
+            response = await alchemy.core.getTokenMetadata(symbols.token1);
           } catch {
-            response = await alchemy.core.getTokenMetadata(symbols.token0);
+            response = await alchemy.core.getTokenMetadata(symbols.token1);
           }
           var token: Token = {
             id: symbols?.token1,
