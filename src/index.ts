@@ -130,7 +130,12 @@ const main = async () => {
           var token = tokens.get(symbols.token0);
           pairToken.token0 = token;
         } else {
-          var response = await alchemy.core.getTokenMetadata(symbols.token0);
+          var response;
+          try {
+            response = await alchemy.core.getTokenMetadata(symbols.token0);
+          } catch {
+            response = await alchemy.core.getTokenMetadata(symbols.token0);
+          }
           var token: Token = {
             id: symbols?.token0,
             symbol: response?.symbol,
@@ -143,7 +148,12 @@ const main = async () => {
           var token = tokens.get(symbols.token1);
           pairToken.token1 = token;
         } else {
-          var response = await alchemy.core.getTokenMetadata(symbols.token1);
+          var response;
+          try {
+            response = await alchemy.core.getTokenMetadata(symbols.token0);
+          } catch {
+            response = await alchemy.core.getTokenMetadata(symbols.token0);
+          }
           var token: Token = {
             id: symbols?.token1,
             symbol: response?.symbol,
