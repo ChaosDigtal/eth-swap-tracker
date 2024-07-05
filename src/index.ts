@@ -14,6 +14,7 @@ import {
   fillUSDAmounts,
   Token,
   PairToken,
+  getEthereumTokenUSD,
 } from "./webhooksUtil";
 import { get } from "http";
 
@@ -192,7 +193,7 @@ const main = async () => {
       if (_logs[i].transactionHash != currentTransactionhash) {
         currentTransactionhash = _logs[i].transactionHash;
         const transaction = await web3.eth.getTransaction(currentTransactionhash);
-        currentFromAddress = transaction.from;
+        currentFromAddress = transaction?.from;
       }
       _logs[i].fromAddress = currentFromAddress;
     }

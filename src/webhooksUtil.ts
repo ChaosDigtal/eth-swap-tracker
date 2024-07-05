@@ -6,6 +6,7 @@ import { IncomingMessage, ServerResponse } from "http";
 import { Web3 } from 'web3'
 import Decimal from 'decimal.js'
 import { Client } from 'pg';
+import Moralis from 'moralis';
 
 export interface AlchemyRequest extends Request {
   alchemy: {
@@ -69,6 +70,24 @@ export const getEthereumUSD = async () => {
   return new Decimal(response['data']['priceUsd']);
 }
 
+export const getEthereumTokenUSD = async (token_address: string) => {
+  try {
+    await Moralis.start({
+      apiKey: process.env.MORALIS_API_KEY
+    });
+  
+    const response = await Moralis.EvmApi.token.getTokenPrice({
+      "chain": "0x1",
+      "address": token_address
+    });
+  
+    return new Decimal(response.raw.usdPrice);
+  } catch (e) {
+    console.error(e);
+    return new Decimal(0);
+  }
+}
+
 function addEdge(graph: Map<string, string[]>, A: string, B: string, ratio: Decimal) {
   if (graph.has(A)) {
     graph.get(A)!.push({ symbol: B, ratio: ratio });
@@ -82,17 +101,20 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
   var graph = new Map<string, { symbol: string, ratio: Decimal }[]>()
 
   for (var se of swapEvents) {
-    addEdge(graph, se.token0.symbol, se.token1.symbol, se.token0.amount.dividedBy(se.token1.amount));
-    addEdge(graph, se.token1.symbol, se.token0.symbol, se.token1.amount.dividedBy(se.token0.amount));
+    if (se.token0.symbol && se.token1.symbol) {
+      addEdge(graph, se.token0.symbol, se.token1.symbol, se.token0.amount.dividedBy(se.token1.amount));
+      addEdge(graph, se.token1.symbol, se.token0.symbol, se.token1.amount.dividedBy(se.token0.amount));
+    }
   }
 
-  const stack: string[] = ["USDC", "USDT", "WETH"];
+  const stack: string[] = ["GHO", "GRAI", "SEUR", "aUSDC", "BUSD", "GUSD", "CRVUSD", "EUSD", "aUSDT", "USDP", "TUSD", "MIM", "EURA", "TAI", "XAI", "USDD", "BOB", "PUSd", "EUSD", "DAI", "VEUR", "DOLA", "FRAX", "anyCRU", "anyETH", "MXNt", "LUSD", "SUSD", "USDC", "USDT", "WETH"];
 
   var symbol2USD = new Map<string, Decimal>();
 
   symbol2USD.set("WETH", ETH2USD);
-  symbol2USD.set("USDT", new Decimal(1.0));
-  symbol2USD.set("USDC", new Decimal(1.0));
+  for (var i = 0; i < stack.length - 1; ++ i) {
+    symbol2USD.set(stack[i], new Decimal(1.0));
+  }
 
   while (stack.length > 0) {
     const symbol = stack.pop();
@@ -109,10 +131,37 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
     if (symbol2USD.has(swapEvents[i].token0.symbol)) {
       swapEvents[i].token0.value_in_usd = symbol2USD.get(swapEvents[i].token0.symbol);
       swapEvents[i].token0.total_exchanged_usd = swapEvents[i].token0.value_in_usd.times(swapEvents[i].token0.amount);
+      if (symbol2USD.has(swapEvents[i].token1.symbol)) {
+        swapEvents[i].token1.value_in_usd = symbol2USD.get(swapEvents[i].token1.symbol);
+        swapEvents[i].token1.total_exchanged_usd = swapEvents[i].token1.value_in_usd.times(swapEvents[i].token1.amount);
+      }
+    } else {
+      stack.push(swapEvents[i].token0.symbol);
+      const usdPrice = await getEthereumTokenUSD(swapEvents[i].token0.id);
+      if (usdPrice == new Decimal(0)) {
+        stack.pop();
+        continue;
+      }
+      symbol2USD.set(swapEvents[i].token0.symbol, usdPrice);
+      while (stack.length > 0) {
+        const symbol = stack.pop();
+    
+        if (!graph.has(symbol)) continue;
+        for (var right of graph.get(symbol)) {
+          if (!symbol2USD.has(right.symbol)) {
+            symbol2USD.set(right.symbol, symbol2USD.get(symbol).times(right.ratio));
+            stack.push(right.symbol);
+          }
+        }
+      }
     }
-    if (symbol2USD.has(swapEvents[i].token1.symbol)) {
-      swapEvents[i].token1.value_in_usd = symbol2USD.get(swapEvents[i].token1.symbol);
-      swapEvents[i].token1.total_exchanged_usd = swapEvents[i].token1.value_in_usd.times(swapEvents[i].token1.amount);
+    if (symbol2USD.has(swapEvents[i].token0.symbol)) {
+      swapEvents[i].token0.value_in_usd = symbol2USD.get(swapEvents[i].token0.symbol);
+      swapEvents[i].token0.total_exchanged_usd = swapEvents[i].token0.value_in_usd.times(swapEvents[i].token0.amount);
+      if (symbol2USD.has(swapEvents[i].token1.symbol)) {
+        swapEvents[i].token1.value_in_usd = symbol2USD.get(swapEvents[i].token1.symbol);
+        swapEvents[i].token1.total_exchanged_usd = swapEvents[i].token1.value_in_usd.times(swapEvents[i].token1.amount);
+      }
     }
   }
 
