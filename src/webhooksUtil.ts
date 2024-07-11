@@ -96,12 +96,30 @@ function addEdge(graph: Map<string, string[]>, A: string, B: string, ratio: Deci
   }
 }
 
+const safeNumber = (value: Decimal) => {
+  if (value.isNaN() || !value.isFinite()) {
+    return new Decimal(0); // or new Decimal(null), depending on your database schema
+  }
+  const maxPrecision = 50;
+  const maxScale = 18;
+  const maxValue = new Decimal('9.999999999999999999999999999999999999999999999999E+31'); // Adjust based on precision and scale
+  const minValue = maxValue.negated();
+  
+  if (value.greaterThan(maxValue)) {
+    return maxValue;
+  }
+  if (value.lessThan(minValue)) {
+    return minValue;
+  }
+  return value;
+};
+
 export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client: Client, web3 : Web3) {
   if (swapEvents.length == 0) return;
   var graph = new Map<string, { symbol: string, ratio: Decimal }[]>()
 
   for (var se of swapEvents) {
-    if (se.token0.symbol && se.token1.symbol) {
+    if (se.token0.symbol && se.token1.symbol && se.token0.amount && se.token1.amount && !se.token0.amount.isNaN() && !se.token1.amount.isNaN() && !se.token0.amount.isZero() && !se.token1.amount.isZero()) {
       addEdge(graph, se.token0.symbol, se.token1.symbol, se.token0.amount.dividedBy(se.token1.amount));
       addEdge(graph, se.token1.symbol, se.token0.symbol, se.token1.amount.dividedBy(se.token0.amount));
     }
@@ -206,15 +224,15 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
       event.fromAddress,
       token0_id,
       token0_symbol,
-      (token0_amount ?? 0).toString(),
-      (token0_value_in_usd ?? 0).toString(),
-      (token0_total_exchanged_usd ?? 0).toString(),
+      safeNumber((token0_amount ?? 0)).toString(),
+      safeNumber((token0_value_in_usd ?? 0)).toString(),
+      safeNumber((token0_total_exchanged_usd ?? 0)).toString(),
       token1_id,
       token1_symbol,
-      (token1_amount ?? 0).toString(),
-      (token1_value_in_usd ?? 0).toString(),
-      (token1_total_exchanged_usd ?? 0).toString(),
-      (ETH2USD ?? 0).toString(),
+      safeNumber((token1_amount ?? 0)).toString(),
+      safeNumber((token1_value_in_usd ?? 0)).toString(),
+      safeNumber((token1_total_exchanged_usd ?? 0)).toString(),
+      safeNumber((ETH2USD ?? 0)).toString(),
       block_timestamp
     ];
 
