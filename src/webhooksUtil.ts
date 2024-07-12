@@ -7,6 +7,7 @@ import { Web3 } from 'web3'
 import Decimal from 'decimal.js'
 import { Client } from 'pg';
 import Moralis from 'moralis';
+import { ReadableStreamDefaultController } from "stream/web";
 
 export interface AlchemyRequest extends Request {
   alchemy: {
@@ -72,15 +73,17 @@ export const getEthereumUSD = async () => {
 
 export const getEthereumTokenUSD = async (token_address: string) => {
   try {
-    await Moralis.start({
-      apiKey: process.env.MORALIS_API_KEY
-    });
-  
+    if (!Moralis.Core.isStarted) {
+      await Moralis.start({
+        apiKey: process.env.MORALIS_API_KEY
+      });
+    }
+
     const response = await Moralis.EvmApi.token.getTokenPrice({
       "chain": "0x1",
       "address": token_address
     });
-  
+
     return new Decimal(response.raw.usdPrice);
   } catch (e) {
     console.error(e);
@@ -104,7 +107,7 @@ const safeNumber = (value: Decimal) => {
   const maxScale = 18;
   const maxValue = new Decimal('9.999999999999999999999999999999999999999999999999E+31'); // Adjust based on precision and scale
   const minValue = maxValue.negated();
-  
+
   if (value.greaterThan(maxValue)) {
     return maxValue;
   }
@@ -114,7 +117,7 @@ const safeNumber = (value: Decimal) => {
   return value;
 };
 
-export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client: Client, web3 : Web3) {
+export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client: Client, web3: Web3) {
   if (swapEvents.length == 0) return;
   var graph = new Map<string, { symbol: string, ratio: Decimal }[]>()
 
@@ -129,8 +132,8 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
 
   var symbol2USD = new Map<string, Decimal>();
 
-  symbol2USD.set("WETH", ETH2USD);
-  for (var i = 0; i < stack.length - 1; ++ i) {
+  symbol2USD.set("WETH", await getEthereumTokenUSD('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'));
+  for (var i = 0; i < stack.length - 1; ++i) {
     symbol2USD.set(stack[i], new Decimal(1.0));
   }
 
@@ -163,7 +166,7 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
       symbol2USD.set(swapEvents[i].token0.symbol, usdPrice);
       while (stack.length > 0) {
         const symbol = stack.pop();
-    
+
         if (!graph.has(symbol)) continue;
         for (var right of graph.get(symbol)) {
           if (!symbol2USD.has(right.symbol)) {
@@ -183,7 +186,7 @@ export async function fillUSDAmounts(swapEvents: {}[], ETH2USD: Decimal, client:
     }
   }
 
-  
+
   const block_timestamp = (new Date(parseInt((await web3.eth.getBlock(swapEvents[0].blockNumber)).timestamp) * 1000)).toISOString();
 
   // Writing to DB
